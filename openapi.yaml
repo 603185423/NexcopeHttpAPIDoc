@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: 显微镜设备控制 API
+  description: 用于控制和管理显微镜设备的 HTTP API 接口
+  version: 1.0.0
+  contact:
+    name: API 维护者
+servers:
+  - url: http://localhost:26358
+    description: 本地开发服务器
+paths:
+  /v1/device/microscope:
+    post:
+      summary: 获取可用的显微镜设备列表
+      description: 返回系统中所有可用的显微镜设备，包括设备ID、名称和端口信息
+      operationId: getMicroscopeDevices
+      responses:
+        '200':
+          description: 成功获取设备列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceMicroscopeList'
+              example:
+                devices:
+                  - id: 3
+                    name: STMicroelectronics Virtual COMPort (COM3)
+                    port: 3
+                  - id: 4
+                    name: STMicroelectronics Virtual COMPort (COM4)
+                    port: 4
+  /v1/device/microscope/{deviceid}/raw_cmd:
+    post:
+      summary: 向显微镜发送原始命令
+      description: 向指定ID的显微镜设备发送原始命令字符串，并返回设备响应
+      operationId: sendRawCommand
+      parameters:
+        - name: deviceid
+          in: path
+          description: 显微镜设备ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: 要发送的原始命令字符串
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+            example: INFRJ
+      responses:
+        '200':
+          description: 命令成功执行，返回设备响应
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "X: 6000006, Y: 3300005, Z: 199999, XRZ: 6499999, YRZ: 5000000, ZRZ: 224999, WJ:NULL, ULP:NULL_0, DLP:NULL_0, YG:NULL, JG:NULL, FG:NULL, WD1: 3, WD2: 3, JXY: 3, JZ: 3, TUL: 405468, AUL: 950000, RCE: 0, TULE: 0, FCE: 0, UDLS: 0"
+        '400':
+          description: 设备无法执行命令或命令格式错误
+        '403':
+          description: 设备ID无效或超出范围
+  /v1/device/microscope/{deviceid}/open:
+    post:
+      summary: 打开显微镜的连接
+      description: 尝试打开与指定ID显微镜设备的连接
+      operationId: openMicroscopeDevice
+      parameters:
+        - name: deviceid
+          in: path
+          description: 显微镜设备ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 设备连接成功打开
+        '400':
+          description: 无法打开设备连接
+        '403':
+          description: 设备ID无效或超出范围
+  /v1/device/microscope/{deviceid}/close:
+    post:
+      summary: 关闭显微镜的连接
+      description: 尝试关闭与指定ID显微镜设备的连接
+      operationId: closeMicroscopeDevice
+      parameters:
+        - name: deviceid
+          in: path
+          description: 显微镜设备ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 设备连接成功关闭
+        '400':
+          description: 无法关闭设备连接
+        '403':
+          description: 设备ID无效或超出范围
+  /v1/device/microscope/{deviceid}/is_open:
+    post:
+      summary: 检查显微镜的连接状态
+      description: 检查与指定ID显微镜设备的连接是否处于打开状态
+      operationId: checkMicroscopeDeviceStatus
+      parameters:
+        - name: deviceid
+          in: path
+          description: 显微镜设备ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取设备连接状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceMicroscopeIsOpen'
+              example:
+                isOpen: true
+        '403':
+          description: 设备ID无效或超出范围
+components:
+  schemas:
+    DeviceMicroscopeIsOpen:
+      type: object
+      properties:
+        isOpen:
+          type: boolean
+          description: 显示显微镜连接是否处于打开状态
+      required:
+        - isOpen
+    MicroscopeDevice:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 设备ID
+        name:
+          type: string
+          description: 设备名称
+        port:
+          type: integer
+          description: 设备通信端口
+      required:
+        - id
+        - name
+        - port
+    DeviceMicroscopeList:
+      type: object
+      properties:
+        devices:
+          type: array
+          description: 显微镜设备列表
+          items:
+            $ref: '#/components/schemas/MicroscopeDevice'
+      required:
+        - devices

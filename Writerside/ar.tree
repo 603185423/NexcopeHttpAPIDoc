@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="ar"
+                  name="API Reference" start-page="API_Reference.topic">
+
+    <toc-element topic="API_Reference.topic">
+        <toc-element topic="检查显微镜的连接状态.topic"/>
+        <toc-element topic="关闭显微镜的连接.topic"/>
+        <toc-element topic="打开显微镜的连接.topic"/>
+        <toc-element topic="向显微镜发送原始命令.topic"/>
+        <toc-element topic="获取可用的显微镜设备列表.topic"/>
+    </toc-element>
+</instance-profile>
