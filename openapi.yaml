@@ -1001,6 +1001,11 @@ paths:
 
     get:
       summary: 获取当前命令级别
+      description: |
+        设备命令执行级别, 详见E-727-GCS-Commands-PZ281E.pdf(p. 26)
+        - Level 0: 默认设置，所有为“普通”用户提供的命令均可使用，可读取所有参数，无需密码
+        - Level 1: 增加了额外的命令和对 1 级参数的写入权限（包含 0 级的命令和参数）。所需密码为“advanced”。
+        - 控制器上电或重启后，有效命令级别始终为 0 级。
       parameters:
         - name: deviceid
           in: path
@@ -1083,6 +1088,11 @@ paths:
 
     get:
       summary: 获取模拟输入的Sensor Range Factor
+      description: |
+        获取指定输入通道的Sensor Range Factor, 详见E727T0005-UserManual-E-727.pdf(p. 227)<br>
+        (仅限E-727.3CDA, .3CDAx)
+        - 1: 输入范围 ±5V
+        - 2: 输入范围 ±10V
       parameters:
         - name: deviceid
           in: path
@@ -1196,6 +1206,9 @@ paths:
 
     get:
       summary: 获取PI设备模拟输入的gain和offset
+      description: |
+        在使用模拟输入线路前，必须通过调整线性化多项式的OFFSET和GAIN参数，将输入电平与适当的位置值关联起来。<br>
+        详见E727T0005-UserManual-E-727.pdf(p. 85)
       parameters:
         - name: deviceid
           in: path
@@ -1318,6 +1331,11 @@ paths:
 
     get:
       summary: 获取PI设备当前模拟输入通道配置
+      description: |
+        获取轴的模拟控制输入状态（通道0表示停用）。<br>
+        当轴的模拟控制输入启用时，它会覆盖该轴所有其他控制源的值（AutoZero过程除外）。<br>
+        AutoZero过程具有最高优先级，将覆盖所有其他源的控制值。<br>
+        详见E727T0005-UserManual-E-727.pdf(p. 88, p. 90)
       parameters:
         - name: deviceid
           in: path
