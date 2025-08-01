@@ -6,6 +6,6 @@
        title="API Reference" id="API_Reference">
 
     <p>
-        更详细的 <a href="https://editor.swagger.io/?url=raw.githubusercontent.com/603185423/NexcopeHttpAPIDoc/refs/heads/master/openapi.yaml">API Reference</a>
+        <a href="https://raw.githubusercontent.com/603185423/NexcopeHttpAPIDoc/refs/heads/master/openapi.yaml">OpenApi Doc</a>,  可以使用 <a href="https://editor.swagger.io/">swagger</a> 查看
     </p>
 </topic>
