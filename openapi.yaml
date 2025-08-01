@@ -1,160 +1,1413 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
-  title: 显微镜设备控制 API
-  description: 用于控制和管理显微镜设备的 HTTP API 接口
+  title: 设备控制API
   version: 1.0.0
-  contact:
-    name: API 维护者
+  description: 控制显微镜设备、PI位移台和程序启动的接口
+
 servers:
-  - url: http://localhost:26358
-    description: 本地开发服务器
+  - url: http://{{serverIP}}:26358/v1
+    description: 主服务器
+
 paths:
-  /v1/device/microscope:
+  # ===================== 显微镜设备接口 =====================
+  /device/microscope/{deviceId}/open:
     post:
-      summary: 获取可用的显微镜设备列表
-      description: 返回系统中所有可用的显微镜设备，包括设备ID、名称和端口信息
-      operationId: getMicroscopeDevices
+      summary: 打开显微镜设备
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 255
+          description: 显微镜设备ID
+      responses:
+        '200':
+          description: 设备打开成功
+        '400':
+          description: 设备打开失败
+        '403':
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/close:
+    post:
+      summary: 关闭显微镜设备
+      description: 关闭指定ID的显微镜设备
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 255
+          description: 显微镜设备ID
+      responses:
+        '200':
+          description: 设备关闭成功
+        '400':
+          description: 设备关闭失败
+        '403':
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/is_open:
+    get:
+      summary: 检查显微镜设备是否已打开
+      description: 查询指定ID的显微镜设备当前是否处于打开状态
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 255
+          description: 显微镜设备ID
+      responses:
+        '200':
+          description: 成功获取设备状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  IsOpen:
+                    type: boolean
+                    example: true
+                    description: 设备是否已打开
+        '403':
+          description: 无效设备ID（超出允许范围）
+
+  /device/microscope:
+    get:
+      summary: 获取可用显微镜设备列表
+      description: 返回当前可用的所有显微镜设备信息
       responses:
         '200':
           description: 成功获取设备列表
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeviceMicroscopeList'
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: 设备ID
+                          example: 24
+                        name:
+                          type: string
+                          description: 设备名称
+                          example: "STMicroelectronics Virtual COM Port (COM24)"
+                        port:
+                          type: integer
+                          description: 设备连接端口号
+                          example: 24
               example:
                 devices:
+                  - id: 24
+                    name: "STMicroelectronics Virtual COM Port (COM24)"
+                    port: 24
                   - id: 3
-                    name: STMicroelectronics Virtual COMPort (COM3)
+                    name: "STMicroelectronics Virtual COM Port (COM3)"
                     port: 3
-                  - id: 4
-                    name: STMicroelectronics Virtual COMPort (COM4)
-                    port: 4
-  /v1/device/microscope/{deviceid}/raw_cmd:
+
+
+  /device/microscope/{deviceId}/raw_cmd:
     post:
       summary: 向显微镜发送原始命令
-      description: 向指定ID的显微镜设备发送原始命令字符串，并返回设备响应
-      operationId: sendRawCommand
+      description: |
+        直接发送原始命令到显微镜设备并返回原始响应。
       parameters:
-        - name: deviceid
+        - name: deviceId
           in: path
-          description: 显微镜设备ID
           required: true
           schema:
             type: integer
+          description: 显微镜设备ID
       requestBody:
-        description: 要发送的原始命令字符串
         required: true
         content:
           text/plain:
             schema:
               type: string
-            example: INFRJ
+              example: "INFRJ"
       responses:
         '200':
-          description: 命令成功执行，返回设备响应
+          description: 设备返回的原始响应
           content:
             text/plain:
               schema:
                 type: string
-              example: "X: 6000006, Y: 3300005, Z: 199999, XRZ: 6499999, YRZ: 5000000, ZRZ: 224999, WJ:NULL, ULP:NULL_0, DLP:NULL_0, YG:NULL, JG:NULL, FG:NULL, WD1: 3, WD2: 3, JXY: 3, JZ: 3, TUL: 405468, AUL: 950000, RCE: 0, TULE: 0, FCE: 0, UDLS: 0"
-        '400':
-          description: 设备无法执行命令或命令格式错误
+              example: |
+                X: 6000006, Y: 3300005, Z: 199999, XRZ: 6499999, YRZ: 5000000, ZRZ: 224999, 
+                WJ:NULL, ULP:NULL_0, DLP:NULL_0, YG:NULL, JG:NULL, FG:NULL, 
+                WD1: 3, WD2: 3, JXY: 3, JZ: 3, TUL: 405468, AUL: 950000, 
+                RCE: 0, TULE: 0, FCE: 0, UDLS: 0
         '403':
-          description: 设备ID无效或超出范围
-  /v1/device/microscope/{deviceid}/open:
-    post:
-      summary: 打开显微镜的连接
-      description: 尝试打开与指定ID显微镜设备的连接
-      operationId: openMicroscopeDevice
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/position_min_max:
+    get:
+      summary: 获取显微镜各轴位置范围
+      description: 获取X/Y/Z轴的最小和最大位置值（无效轴将返回null）
       parameters:
-        - name: deviceid
+        - name: deviceId
           in: path
-          description: 显微镜设备ID
           required: true
           schema:
             type: integer
       responses:
         '200':
-          description: 设备连接成功打开
-        '400':
-          description: 无法打开设备连接
-        '403':
-          description: 设备ID无效或超出范围
-  /v1/device/microscope/{deviceid}/close:
-    post:
-      summary: 关闭显微镜的连接
-      description: 尝试关闭与指定ID显微镜设备的连接
-      operationId: closeMicroscopeDevice
-      parameters:
-        - name: deviceid
-          in: path
-          description: 显微镜设备ID
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 设备连接成功关闭
-        '400':
-          description: 无法关闭设备连接
-        '403':
-          description: 设备ID无效或超出范围
-  /v1/device/microscope/{deviceid}/is_open:
-    post:
-      summary: 检查显微镜的连接状态
-      description: 检查与指定ID显微镜设备的连接是否处于打开状态
-      operationId: checkMicroscopeDeviceStatus
-      parameters:
-        - name: deviceid
-          in: path
-          description: 显微镜设备ID
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 成功获取设备连接状态
+          description: 成功获取位置范围
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeviceMicroscopeIsOpen'
+                type: object
+                properties:
+                  Data:
+                    type: object
+                    properties:
+                      x:
+                        type: object
+                        nullable: true
+                        properties:
+                          Min:
+                            type: integer
+                          Max:
+                            type: integer
+                      y:
+                        type: object
+                        nullable: true
+                        properties:
+                          Min:
+                            type: integer
+                          Max:
+                            type: integer
+                      z:
+                        type: object
+                        nullable: true
+                        properties:
+                          Min:
+                            type: integer
+                          Max:
+                            type: integer
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
               example:
-                isOpen: true
+                Data:
+                  x:
+                    Min: 0
+                    Max: 13000000
+                  y:
+                    Min: 0
+                    Max: 10000000
+                  z:
+                    Min: 0
+                    Max: 1000000
+                ErrorCode: null
+                ErrorReason: null
         '403':
-          description: 设备ID无效或超出范围
-components:
-  schemas:
-    DeviceMicroscopeIsOpen:
-      type: object
-      properties:
-        isOpen:
-          type: boolean
-          description: 显示显微镜连接是否处于打开状态
-      required:
-        - isOpen
-    MicroscopeDevice:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: 设备ID
-        name:
-          type: string
-          description: 设备名称
-        port:
-          type: integer
-          description: 设备通信端口
-      required:
-        - id
-        - name
-        - port
-    DeviceMicroscopeList:
-      type: object
-      properties:
-        devices:
-          type: array
-          description: 显微镜设备列表
-          items:
-            $ref: '#/components/schemas/MicroscopeDevice'
-      required:
-        - devices
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/position:
+    post:
+      summary: 设置显微镜位置
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  example: 5000000
+                y:
+                  type: integer
+                  example: 4000000
+                z:
+                  type: integer
+                  example: 30000
+      responses:
+        '200':
+          description: 位置设置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+    get:
+      summary: 获取显微镜当前位置
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取位置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Data:
+                    type: object
+                    properties:
+                      x:
+                        type: integer
+                        example: 5791430
+                      y:
+                        type: integer
+                        example: 4940710
+                      z:
+                        type: integer
+                        example: 49824
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+  /device/microscope/{deviceid}/WJ:
+    post:
+      summary: 设置显微镜物镜
+      description: 设置当前使用的物镜孔位编号
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 显微镜设备ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                WJ:
+                  type: integer
+                  description: 物镜孔位
+                  example: 2
+      responses:
+        '200':
+          description: 物镜设置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+    get:
+      summary: 获取当前物镜编号
+      description: 查询当前正在使用的物镜孔位编号
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 显微镜设备ID
+      responses:
+        '200':
+          description: 成功获取物镜信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Data:
+                    type: object
+                    properties:
+                      WJ:
+                        type: integer
+                        description: 当前物镜孔位
+                        example: 2
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/YG:
+    post:
+      summary: 设置荧光转盘位置
+      description: 设置显微镜的荧光转盘孔位
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                YG:
+                  type: integer
+                  description: 转盘孔位编号
+                  example: 2
+      responses:
+        '200':
+          description: 转盘位置设置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+    get:
+      summary: 获取当前荧光转盘位置
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取转盘位置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Data:
+                    type: object
+                    properties:
+                      YG:
+                        type: integer
+                        description: 当前转盘孔位编号
+                        example: 6
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/YG2:
+    post:
+      summary: 设置荧光转盘位置
+      description: 设置显微镜的荧光二层转盘孔位
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                YG2:
+                  type: integer
+                  description: 转盘孔位编号
+                  example: 2
+      responses:
+        '200':
+          description: 转盘位置设置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+    get:
+      summary: 获取当前荧光二层转盘位置
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取转盘位置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Data:
+                    type: object
+                    properties:
+                      YG2:
+                        type: integer
+                        description: 当前转盘孔位编号
+                        example: 6
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+  /device/microscope/{deviceId}/JG2:
+    post:
+      summary: 设置聚光镜位置
+      description: 设置显微镜的聚光镜孔位
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                JG:
+                  type: integer
+                  description: 聚光镜孔位编号
+                  example: 2
+      responses:
+        '200':
+          description: 转盘位置设置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+    get:
+      summary: 获取当前聚光镜位置
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功获取转盘位置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Data:
+                    type: object
+                    properties:
+                      JG:
+                        type: integer
+                        description: 当前转盘孔位编号
+                        example: 6
+                  ErrorCode:
+                    type: integer
+                    nullable: true
+                    example: null
+                  ErrorReason:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 无效设备ID
+
+  # ===================== PI位移台接口 =====================
+  /device/pi/E727/enumerate_devices:
+    get:
+      summary: 枚举可用的PI设备
+      responses:
+        '200':
+          description: 成功获取设备列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  DeviceCount:
+                    type: integer
+                    example: 1
+                  DeviceNames:
+                    type: array
+                    items:
+                      type: string
+                    example: ["PI E-727 Controller SN 0124009586"]
+
+  /device/pi/E727/connect_device:
+    post:
+      summary: 连接PI设备
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                DeviceName:
+                  type: string
+                  example: "PI E-727 Controller SN 0124009586"
+      responses:
+        '200':
+          description: 设备连接成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  DeviceID:
+                    type: integer
+                    example: 0
+
+
+  /device/pi/E727/{deviceid}/is_device_connected:
+    post:
+      summary: 检查PI设备连接状态
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 连接状态结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  IsConnected:
+                    type: boolean
+                    example: true
+
+  /device/pi/E727/{deviceid}/disconnect_device:
+    post:
+      summary: 断开PI设备连接
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 设备已断开
+          content:
+            application/json:
+              schema:
+                type: object  # 空响应体
+
+  /device/pi/E727/{deviceid}/auto_zero:
+    post:
+      summary: 执行PI设备自动归零
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                x:
+                  type: boolean
+                  description: 是否对X轴执行自动归零
+                  example: true
+                y:
+                  type: boolean
+                  description: 是否对Y轴执行自动归零
+                  example: true
+                z:
+                  type: boolean
+                  description: 是否对Z轴执行自动归零
+                  example: true
+      responses:
+        '200':
+          description: 自动归零执行结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 操作是否成功
+                    example: true
+
+    get:
+      summary: 获取PI设备自动归零状态
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 自动归零状态信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 查询操作是否成功
+                    example: true
+                  x:
+                    type: boolean
+                    description: X轴是否已完成自动归零
+                    example: true
+                  y:
+                    type: boolean
+                    description: Y轴是否已完成自动归零
+                    example: true
+                  z:
+                    type: boolean
+                    description: Z轴是否已完成自动归零
+                    example: true
+
+  /device/pi/E727/{deviceid}/position_min_max:
+    get:
+      summary: 获取PI设备位置范围
+      description: 查询PI设备各轴的最小/最大位置范围
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: PI设备ID
+      responses:
+        '200':
+          description: 成功获取位置范围
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 查询操作是否成功
+                    example: true
+                  x:
+                    type: object
+                    properties:
+                      Min:
+                        type: number
+                        format: double
+                        example: 0
+                      Max:
+                        type: number
+                        format: double
+                        example: 30
+                  y:
+                    type: object
+                    properties:
+                      Min:
+                        type: number
+                        format: double
+                        example: 0
+                      Max:
+                        type: number
+                        format: double
+                        example: 30
+                  z:
+                    type: object
+                    properties:
+                      Min:
+                        type: number
+                        format: double
+                        example: 0
+                      Max:
+                        type: number
+                        format: double
+                        example: 10
+              example:
+                result: true
+                x:
+                  Min: 0
+                  Max: 30
+                y:
+                  Min: 0
+                  Max: 30
+                z:
+                  Min: 0
+                  Max: 10
+
+  /device/pi/E727/{deviceid}/servo_state:
+    post:
+      summary: 设置PI设备伺服状态
+      description: 控制PI设备各轴的伺服开关状态
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: PI设备ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                x:
+                  type: boolean
+                  nullable: true
+                  description: X轴伺服状态(true=开启, false=关闭)
+                  example: true
+                y:
+                  type: boolean
+                  nullable: true
+                  description: Y轴伺服状态(true=开启, false=关闭)
+                  example: true
+                z:
+                  type: boolean
+                  nullable: true
+                  description: Z轴伺服状态(true=开启, false=关闭)
+                  example: true
+              example:
+                x: true
+                y: true
+                z: true
+      responses:
+        '200':
+          description: 伺服状态设置结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 操作是否成功
+                    example: true
+              example:
+                result: true
+
+  /device/pi/E727/{PIDeviceID}/move:
+    post:
+      summary: 移动PI设备
+      parameters:
+        - name: PIDeviceID
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                x:
+                  type: number
+                  format: double
+                  example: 1.2
+                y:
+                  type: number
+                  format: double
+                  example: 2.3
+                z:
+                  type: number
+                  format: double
+                  example: 0.1
+      responses:
+        '200':
+          description: 移动指令执行结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+
+    get:
+      summary: 获取PI设备当前位置
+      parameters:
+        - name: PIDeviceID
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 当前位置信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+                  x:
+                    type: number
+                    format: double
+                    example: -0.1098079681
+                  y:
+                    type: number
+                    format: double
+                    example: -0.1136112213
+                  z:
+                    type: number
+                    format: double
+                    example: -0.0341091156
+
+  /device/pi/E727/{deviceid}/command_level:
+    post:
+      summary: 设置PI设备命令级别
+      description: |
+        设置设备命令执行级别（需要密码）, 详见E-727-GCS-Commands-PZ281E.pdf(p. 26)
+        - Level 0: 默认设置，所有为“普通”用户提供的命令均可使用，可读取所有参数，无需密码
+        - Level 1: 增加了额外的命令和对 1 级参数的写入权限（包含 0 级的命令和参数）。所需密码为“advanced”。
+        - 控制器上电或重启后，有效命令级别始终为 0 级。
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Level:
+                  type: integer
+                  description: 要设置的命令级别
+                  example: 1
+                Password:
+                  type: string
+                  description: 级别访问密码
+                  example: "advanced"
+              required:
+                - Level
+                - Password
+      responses:
+        '200':
+          description: 级别设置结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 设置是否成功
+                    example: true
+
+    get:
+      summary: 获取当前命令级别
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 当前级别信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 查询是否成功
+                    example: true
+                  Level:
+                    type: integer
+                    description: 当前命令级别
+                    example: 0
+
+  /device/pi/E727/{deviceid}/analog_input_sensor_range_factor:
+    post:
+      summary: 设置模拟输入的Sensor Range Factor
+      description: |
+        设置指定输入通道的Sensor Range Factor (需要command level 1), 详见E727T0005-UserManual-E-727.pdf(p. 227)<br>
+        (仅限E-727.3CDA, .3CDAx)
+        - 1: 输入范围 ±5V
+        - 2: 输入范围 ±10V
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                CH4:
+                  type: number
+                  format: double
+                  enum: [1, 2]
+                  example: 2
+                  description: 通道4的Sensor Range Factor
+                CH5:
+                  type: number
+                  format: double
+                  enum: [1, 2]
+                  example: 2
+                  description: 通道5的Sensor Range Factor
+                CH6:
+                  type: number
+                  format: double
+                  enum: [1, 2]
+                  example: 2
+                  description: 通道6的Sensor Range Factor
+                CH7:
+                  type: number
+                  format: double
+                  enum: [1, 2]
+                  example: 2
+                  description: 通道7的Sensor Range Factor
+      responses:
+        '200':
+          description: 设置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+
+    get:
+      summary: 获取模拟输入的Sensor Range Factor
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+                  CH4:
+                    type: number
+                    format: double
+                    example: 2
+                  CH5:
+                    type: number
+                    format: double
+                    example: 2
+                  CH6:
+                    type: number
+                    format: double
+                    example: 2
+                  CH7:
+                    type: number
+                    format: double
+                    example: 2
+
+  /device/pi/E727/{deviceid}/analog_input_gain_offset:
+    post:
+      summary: 设置PI设备模拟输入的gain和offset
+      description: |
+        在使用模拟输入线路前，必须通过调整线性化多项式的OFFSET和GAIN参数，将输入电平与适当的位置值关联起来。<br>
+        详见E727T0005-UserManual-E-727.pdf(p. 85)
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                CH4:
+                  type: object
+                  properties:
+                    Gain:
+                      type: number
+                      format: double
+                    Offset:
+                      type: number
+                      format: double
+                  nullable: true
+                CH5:
+                  type: object
+                  properties:
+                    Gain:
+                      type: number
+                      format: double
+                    Offset:
+                      type: number
+                      format: double
+                  nullable: true
+                CH6:
+                  type: object
+                  properties:
+                    Gain:
+                      type: number
+                      format: double
+                    Offset:
+                      type: number
+                      format: double
+                  nullable: true
+                CH7:
+                  type: object
+                  properties:
+                    Gain:
+                      type: number
+                      format: double
+                    Offset:
+                      type: number
+                      format: double
+                  nullable: true
+              example:
+                CH7:
+                  Gain: 1.4
+                  Offset: -20
+      responses:
+        '200':
+          description: 参数设置结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+              example:
+                result: true
+
+    get:
+      summary: 获取PI设备模拟输入的gain和offset
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 当前增益/偏移参数
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+                  CH4:
+                    type: object
+                    properties:
+                      Gain:
+                        type: number
+                        format: double
+                      Offset:
+                        type: number
+                        format: double
+                    nullable: true
+                  CH5:
+                    type: object
+                    properties:
+                      Gain:
+                        type: number
+                        format: double
+                      Offset:
+                        type: number
+                        format: double
+                    nullable: true
+                  CH6:
+                    type: object
+                    properties:
+                      Gain:
+                        type: number
+                        format: double
+                      Offset:
+                        type: number
+                        format: double
+                    nullable: true
+                  CH7:
+                    type: object
+                    properties:
+                      Gain:
+                        type: number
+                        format: double
+                      Offset:
+                        type: number
+                        format: double
+                    nullable: true
+              example:
+                result: true
+                CH4:
+                  Gain: 0
+                  Offset: 1
+                CH5:
+                  Gain: 0
+                  Offset: 1
+                CH6:
+                  Gain: 0
+                  Offset: 1
+                CH7:
+                  Gain: 1.399999976
+                  Offset: -20
+
+  /device/pi/E727/{deviceid}/analog_input_channel:
+    post:
+      summary: 设置PI设备模拟输入通道
+      description: |
+        启用/禁用轴的模拟控制输入（通道0表示停用）。<br>
+        当轴的模拟控制输入启用时，它会覆盖该轴所有其他控制源的值（AutoZero过程除外）。<br>
+        AutoZero过程具有最高优先级，将覆盖所有其他源的控制值。<br>
+        详见E727T0005-UserManual-E-727.pdf(p. 88, p. 90)
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  nullable: true
+                  description: X轴通道号（0=停用）
+                  example: 0
+                y:
+                  type: integer
+                  nullable: true
+                  description: Y轴通道号（0=停用）
+                  example: 0
+                z:
+                  type: integer
+                  nullable: true
+                  description: Z轴通道号（0=停用）
+                  example: 7
+      responses:
+        '200':
+          description: 通道设置结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+
+    get:
+      summary: 获取PI设备当前模拟输入通道配置
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 当前通道配置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    example: true
+                  x:
+                    type: integer
+                    description: X轴当前通道号
+                    example: 0
+                  y:
+                    type: integer
+                    description: Y轴当前通道号
+                    example: 0
+                  z:
+                    type: integer
+                    description: Z轴当前通道号
+                    example: 7
+
+  /device/pi/E727/{deviceid}/get_error:
+    post:
+      summary: 获取PI设备错误信息
+      parameters:
+        - name: deviceid
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: PI设备ID
+      responses:
+        '200':
+          description: 错误信息获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 是否成功获取错误信息
+                  ErrorID:
+                    type: integer
+                    description: 错误代码
+                  ErrorMsg:
+                    type: string
+                    description: 错误描述信息
+              examples:
+                no_error:
+                  summary: 无错误状态
+                  value:
+                    result: true
+                    ErrorID: 0
+                    ErrorMsg: "No error"
+                invalid_handle:
+                  summary: 无效设备句柄
+                  value:
+                    result: true
+                    ErrorID: -9
+                    ErrorMsg: "There is no interface or DLL handle with the given ID"
+                axis_error:
+                  summary: 轴移动错误
+                  value:
+                    result: true
+                    ErrorID: 5
+                    ErrorMsg: "Unallowable move attempted on unreferenced axis, or move attempted with servo off"
+
+
+  # ===================== 程序启动接口 =====================
+  /launcher/{program_alias}:
+    post:
+      summary: 启动指定程序
+      parameters:
+        - name: program_alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 程序启动成功
+        '404':
+          description: 未找到对应程序别名

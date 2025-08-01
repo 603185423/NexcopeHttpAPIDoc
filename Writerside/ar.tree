@@ -3,13 +3,53 @@
         SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
 
 <instance-profile id="ar"
-                  name="API Reference" start-page="API_Reference.topic">
+                 name="API Doc"
+                 start-page="Quickstart.md">
 
+    <toc-element topic="Quickstart.md"/>
+    <toc-element topic="How-to-control-microscope.md"/>
+    <toc-element topic="How-to-control-PI-device.md"/>
+    <toc-element topic="How-to-use-pi-analog-input.md"/>
     <toc-element topic="API_Reference.topic">
-        <toc-element topic="检查显微镜的连接状态.topic"/>
-        <toc-element topic="关闭显微镜的连接.topic"/>
-        <toc-element topic="打开显微镜的连接.topic"/>
-        <toc-element topic="向显微镜发送原始命令.topic"/>
-        <toc-element topic="获取可用的显微镜设备列表.topic"/>
+        <toc-element toc-title="PI设备">
+            <toc-element topic="枚举可用的PI设备.topic"/>
+            <toc-element topic="检查PI设备连接状态.topic"/>
+            <toc-element topic="连接PI设备.topic"/>
+            <toc-element topic="断开PI设备连接.topic"/>
+            <toc-element topic="获取PI设备错误信息.topic"/>
+            <toc-element topic="获取PI设备位置范围.topic"/>
+            <toc-element topic="设置PI设备伺服状态.topic"/>
+            <toc-element topic="获取PI设备自动归零状态.topic"/>
+            <toc-element topic="执行PI设备自动归零.topic"/>
+            <toc-element topic="获取PI设备当前位置.topic"/>
+            <toc-element topic="移动PI设备.topic"/>
+            <toc-element topic="获取当前命令级别.topic"/>
+            <toc-element topic="设置PI设备命令级别.topic"/>
+            <toc-element topic="获取模拟输入的Sensor_Range_Factor.topic"/>
+            <toc-element topic="设置模拟输入的Sensor_Range_Factor.topic"/>
+            <toc-element topic="获取PI设备模拟输入的gain和offset.topic"/>
+            <toc-element topic="设置PI设备模拟输入的gain和offset.topic"/>
+            <toc-element topic="获取PI设备当前模拟输入通道配置.topic"/>
+            <toc-element topic="设置PI设备模拟输入通道.topic"/>
+        </toc-element>
+        <toc-element toc-title="显微镜">
+            <toc-element topic="获取可用显微镜设备列表.topic"/>
+            <toc-element topic="检查显微镜设备是否已打开.topic"/>
+            <toc-element topic="打开显微镜设备.topic"/>
+            <toc-element topic="关闭显微镜设备.topic"/>
+            <toc-element topic="向显微镜发送原始命令.topic"/>
+            <toc-element topic="获取显微镜各轴位置范围.topic"/>
+            <toc-element topic="获取显微镜当前位置.topic"/>
+            <toc-element topic="设置显微镜位置.topic"/>
+            <toc-element topic="获取当前物镜编号.topic"/>
+            <toc-element topic="设置显微镜物镜.topic"/>
+            <toc-element topic="获取当前荧光转盘位置.topic"/>
+            <toc-element topic="设置荧光转盘位置.topic"/>
+            <toc-element topic="获取当前荧光二层转盘位置.topic"/>
+            <toc-element topic="设置荧光转盘位置2.topic"/>
+            <toc-element topic="获取当前聚光镜位置.topic"/>
+            <toc-element topic="设置聚光镜位置.topic"/>
+        </toc-element>
+        <toc-element topic="启动指定程序.topic"/>
     </toc-element>
 </instance-profile>

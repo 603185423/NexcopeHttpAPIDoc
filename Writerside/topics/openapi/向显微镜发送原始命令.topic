@@ -5,5 +5,5 @@
        xsi:noNamespaceSchemaLocation="https://resources.jetbrains.com/writerside/1.0/topic.v2.xsd"
        title="向显微镜发送原始命令" id="向显微镜发送原始命令">
 
-    <api-endpoint openapi-path="../../../openapi.yaml" method="POST" endpoint="/v1/device/microscope/{deviceid}/raw_cmd"/>
+    <api-endpoint openapi-path="../../../openapi.yaml" method="POST" endpoint="/device/microscope/{deviceId}/raw_cmd"/>
 </topic>
